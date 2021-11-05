@@ -1,12 +1,18 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const fetchUser = require('../middleware/fetchUser');
+
+require('dotenv').config();
+const secret = process.env.ACCESS_TOKEN;
 
 router.get('/', (req, res) => {
     res.send("Ok");
 });
 
-// Create a new user
+// Route-1: Create a new user
 router.post('/createUser', async (req, res) => {
     const Email = req.body.email;
     const Password = req.body.password;
@@ -39,13 +45,70 @@ router.post('/createUser', async (req, res) => {
             password: Password
         });
         const newUser = await user.save();
-        res.status(200).send("Success!");
+        const data = {
+            user: {
+                id: newUser.id
+            }
+        }
+
+        const authToken = jwt.sign(data, secret);
+        return res.status(200).json({ authToken });
 
     } catch (err) {
-        res.status(500).send("Some error has been encountered!");
+        res.status(500).send("Some error has been encountered in the server!");
     }
 });
 
+// Route-2: Authenticate an existing user
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    const errors = [];
+
+    // Validating different fields
+    ValidateEmail(email, errors);
+    if (!password)
+        errors.push({ location: "password", message: "Password cannot be empty!" });
+
+    if (errors.length > 0) {
+        return res.status(400).json({ error: errors });
+    }
+    try {
+        const user = await User.findOne({ email: email });
+        if (!user) {
+            return res.status(400).json({ error: "Invalid Credentials!" });
+        }
+
+        const compare = await bcrypt.compare(password, user.password);
+        if (!compare) {
+            return res.status(400).json({ error: "Invalid Credentials!" });
+        }
+
+        const payload = {
+            user: {
+                id: user.id
+            }
+        }
+        const authToken = jwt.sign(payload, secret);
+        return res.status(200).json({ authToken });
+
+    } catch (err) {
+        res.status(500).send("Some error has been encountered in the server!");
+    }
+});
+
+// Route-3: Get user details (Login Required)
+router.post('/getUser', fetchUser, async (req, res) => {
+    const id = req.user.id;
+    try {
+        // Display every details except the password
+        const user = await User.findById({ id: id }).select("-password");
+        return res.status(200).json(user);
+    } catch (err) {
+        res.status(500).send("Some error has been encountered in the server!");
+    }
+})
+
+// Utility Funcitons
 function ValidateEmail(mail, errors) {
     let mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!(mail.match(mailformat)))
