@@ -111,13 +111,19 @@ router.post('/getUser', fetchUser, async (req, res) => {
 // Utility Funcitons
 function ValidateEmail(mail, errors) {
     let mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    if (!(mail.match(mailformat)))
+    if (!mail)
+        errors.push({ location: "email", message: "Email cannot be empty!" });
+    else if (!(mail.match(mailformat)))
         errors.push({ location: "email", message: "Invalid Email!" });
 }
 
 function ValidatePassword(pass, repass, errors) {
     let paswd = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,25}$/;
-    if (!(pass.match(paswd)))
+    if (!pass)
+        errors.push({ location: "password", message: "Password cannot be empty!" });
+    else if (!repass)
+        errors.push({ location: "password", message: "Re-enter the password!" });
+    else if (!(pass.match(paswd)))
         errors.push({ location: "password", message: "Invalid Password - Your password must be between 8 to 25 characters, should contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character!" });
     else if (pass !== repass)
         errors.push({ location: "rePassword", message: "Passwords doesn't match!" });
@@ -125,12 +131,16 @@ function ValidatePassword(pass, repass, errors) {
 
 function ValidateName(name, errors) {
     let nameFormat = /^[a-zA-Z]+( [a-zA-Z]+)+$/;
-    if (!(name.match(nameFormat)))
+    if (!name)
+        errors.push({ location: "name", message: "Name cannot be empty!" });
+    else if (!(name.match(nameFormat)))
         errors.push({ location: "name", message: "Invalid Name!" });
 }
 
 function ValidateUsername(userName, errors) {
-    if (userName.length < 5 || userName.length > 25)
+    if (!userName)
+        errors.push({ location: "userName", message: "User Name cannot be empty!" });
+    else if (userName.length < 5 || userName.length > 25)
         errors.push({ location: "userName", message: "Invalid Username - Username length must be between 5 to 25 characters" });
 }
 module.exports = router;

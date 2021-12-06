@@ -8,9 +8,11 @@ app.use(express.json());
 
 // Routers:
 const authorizationRouter = require('./routes/auth');
+const notesRouter = require('./routes/notes');
 
 // API Routes:
 app.use('/api/auth', authorizationRouter);
+app.use('/api/notes', notesRouter);
 
 connectMongo();
 
